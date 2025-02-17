@@ -81,7 +81,7 @@ def read_texts(texts, files, outpath, lang, max_mem, decoder_mult):
     audio_times = {}
     for text, name in zip(texts, files):
         start = time.time()
-        _, t = reader.tts(text, name)
+        _, t = reader.do_tts(text, name)
         run_times[name] = time.time()-start+setup_time
         audio_times[name] = t
     del reader
@@ -184,4 +184,4 @@ def run(in_path, out_path, lang, time_data, max_mem, decoder_mult, skip_correcti
 
 
 if __name__ == "__main__":
-    run("in/", "out/", "en", False, False)
+    main()

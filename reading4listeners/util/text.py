@@ -67,7 +67,7 @@ class TextProcessor:
     # get and correct text
     def loadpdf(self, filename, sesspath, force=True, skip_correction=False, skip_ocr=False):
         if skip_ocr:
-            with open(sesspath + filename, rb) as f:
+            with open(sesspath + filename, 'rb') as f:
                 pdf = PDF(f)
                 text0 = "\n\n".join(pdf)
         else:

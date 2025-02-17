@@ -1,10 +1,9 @@
-TTS==0.8.0
+coqui-tts
 nltk
 psutil
 pydub
 tqdm
 ocrmypdf
-transformers
 pyspellchecker
 torch
 opencv-python

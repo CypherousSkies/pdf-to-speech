@@ -9,9 +9,9 @@ from TTS.utils.manage import ModelManager
 #from TTS.utils.synthesizer import Synthesizer
 from pydub import AudioSegment
 from tqdm import tqdm
-
+import gc
 from reading4listeners import lang_dict
-
+import tracemalloc
 
 def split_into_sentences(string):
     try:
@@ -63,7 +63,7 @@ class Reader:
             sample_width=wav.dtype.itemsize,
             channels=1
         )
-        a.export(fout, format="mp3")
+        a.export(fout, format="mp3").close()
         del a
         print(f"| > Wrote {fout}")
         return fout, len(wav) / self.tts.synthesizer.output_sample_rate
@@ -77,14 +77,17 @@ class Reader:
         print(f"> Have {mem_tot / (1024 * 1024)}MB of memory total")
         audio_time = 0
         splits = 0
+        mem_use = psutil.Process().memory_info().rss
+        #tracemalloc.start()
+        #snapshot_old = tracemalloc.take_snapshot()
         for sen in tqdm(sens):
             if sen == "":
                 continue
             if manual_swap:
-                mem_last = psutil.Process().memory_info().rss
+                mem_last = mem_use
             self.tts.synthesizer.tts_model.decoder.max_decoder_steps = len(sen) * self.decoder_mult  # override decoder steps
-            sen = " ".join([s for s in self.tts.synthesizer.split_into_sentences(sen) if
-                            len(s.split(" ")) >= 2])  # TTS crashes on null sentences. this fixes that i think
+            #sen = " ".join([s for s in self.tts.synthesizer.split_into_sentences(sen) if
+            #                len(s.split(" ")) >= 2])  # TTS crashes on null sentences. this fixes that i think
             data = self.tts.synthesizer.tts(sen)
             if sen == "" or sen == " ":
                 continue
@@ -103,9 +106,18 @@ class Reader:
                     self._write_to_file(wav, fname + str(splits))
                     splits += 1
                     del wav
-                    #del self.tts
-                    #self._init_tts()
+                    del self.tts.synthesizer.tts_model
+                    del self.tts.synthesizer
+                    del self.tts
+                    gc.collect()
+                    #print(gc.collect(generation=3))
+                    self._init_tts()
                     wav = None
+                    #snapshot_new = tracemalloc.take_snapshot()
+                    #for stat in snapshot_new.compare_to(snapshot_old, 'traceback')[:10]:
+                    #    print(stat)
+                    #snapshot_old = snapshot_new
+                    #del snapshot_new
         audio_time = 0
         file = ""
         if wav is not None and splits > 0:
